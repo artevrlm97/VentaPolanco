@@ -43,7 +43,7 @@
   </div>
   <div class="field">
     <label>Dólar calle al momento del avalúo (Bs)</label>
-    <input type="number" id="tc-avaluo" value="9.10" readonly>
+    <input type="number" id="tc-avaluo" value="9.20" readonly>
     <p class="fixed-note">Valor fijo del avalúo original</p>
   </div>
   <div class="field">
@@ -58,7 +58,7 @@
 <div class="metric">
   <p class="metric-label">Ajuste por variación dólar calle</p>
   <p class="metric-value" id="res-pct">—</p>
-  <p class="metric-sub">entre dólar avalúo (9,10) y actual</p>
+  <p class="metric-sub">entre dólar avalúo (9,20) y actual</p>
 </div>
 
 <div class="grid2">
@@ -80,7 +80,7 @@
   <div class="metric">
     <p class="metric-label">Valor real (dólar calle avalúo)</p>
     <p class="metric-value" id="res-real-avaluo">—</p>
-    <p class="metric-sub">a Bs 9,10</p>
+    <p class="metric-sub">a Bs 9,20</p>
   </div>
   <div class="metric">
     <p class="metric-label">Valor real (dólar calle hoy)</p>
@@ -95,7 +95,7 @@ function fmt(n) { return n.toLocaleString('es-BO', {minimumFractionDigits: 2, ma
 function calcular() {
   const usdVal = parseFloat(document.getElementById('usd-avaluo').value);
   const tcOficial = parseFloat(document.getElementById('tc-oficial').value);
-  const tcAvaluo = 9.10;
+  const tcAvaluo = 9.20;
   const tcActual = parseFloat(document.getElementById('tc-actual').value);
 
   const bs = usdVal * tcOficial;
