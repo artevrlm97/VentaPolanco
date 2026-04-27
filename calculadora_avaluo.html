@@ -16,8 +16,11 @@
   input[type="number"]:focus { border-color: #555; }
   input[readonly] { background: #f0f0ee; color: #888; border-color: #e0e0de; }
   .fixed-note { font-size: 11px; color: #aaa; margin-top: 4px; }
-  button { width: 100%; padding: 14px; background: #1a1a1a; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; color: #fff; font-weight: 500; margin-top: 4px; }
+  .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+  button { flex: 1; padding: 14px; background: #1a1a1a; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; color: #fff; font-weight: 500; }
   button:active { opacity: 0.85; }
+  button.secondary { background: transparent; border: 0.5px solid #aaa; color: #1a1a1a; font-weight: 400; }
+  button.secondary:active { background: #f0f0ee; }
   .metric { background: #f5f5f2; border-radius: 10px; padding: 1rem; margin-bottom: 10px; }
   .metric-label { font-size: 13px; color: #666; margin-bottom: 4px; }
   .metric-value { font-size: 24px; font-weight: 500; color: #1a1a1a; }
@@ -25,6 +28,17 @@
   .metric-sub { font-size: 12px; color: #999; margin-top: 3px; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   hr { border: none; border-top: 0.5px solid #ddd; margin: 1.25rem 0; }
+  .alerta { border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 12px; font-weight: 500; display: none; }
+  .alerta.baja { background: #fde8e8; color: #a32d2d; border: 0.5px solid #f09595; }
+  .alerta.sube { background: #e8f5e9; color: #1a6e3c; border: 0.5px solid #97c459; }
+  .fetch-status { font-size: 12px; color: #888; margin-top: 6px; min-height: 16px; }
+  .fetch-status.ok { color: #1a6e3c; }
+  .fetch-status.err { color: #a32d2d; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; background: #ccc; }
+  .dot.ok { background: #1a6e3c; }
+  .dot.err { background: #a32d2d; }
+  .dot.loading { background: #f0a500; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 </style>
 </head>
 <body>
@@ -47,10 +61,14 @@
     <p class="fixed-note">Valor fijo del avalúo original</p>
   </div>
   <div class="field">
-    <label>Dólar calle actual (Bs)</label>
-    <input type="number" id="tc-actual" value="9.70" step="0.01" inputmode="decimal">
+    <label>Dólar calle actual — Binance P2P (Bs)</label>
+    <input type="number" id="tc-actual" value="" step="0.01" inputmode="decimal" placeholder="Cargando...">
+    <div class="fetch-status" id="fetch-status"><span class="dot loading" id="dot"></span>Consultando Binance P2P...</div>
   </div>
-  <button onclick="calcular()">Calcular</button>
+  <div class="btn-row">
+    <button onclick="calcular()">Calcular</button>
+    <button class="secondary" onclick="fetchDolar()">↻ Actualizar dólar</button>
+  </div>
 </div>
 
 <p class="section-title">Resultado</p>
@@ -86,11 +104,35 @@
     <p class="metric-label">Valor real (dólar calle hoy)</p>
     <p class="metric-value" id="res-real-hoy">—</p>
     <p class="metric-sub" id="res-real-hoy-tc">a Bs —</p>
+    <div class="alerta" id="alerta-diff"></div>
   </div>
 </div>
 
 <script>
 function fmt(n) { return n.toLocaleString('es-BO', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+
+function setStatus(msg, tipo) {
+  const el = document.getElementById('fetch-status');
+  el.className = 'fetch-status ' + (tipo || '');
+  el.innerHTML = '<span class="dot ' + (tipo||'loading') + '" id="dot"></span>' + msg;
+}
+
+async function fetchDolar() {
+  setStatus('Consultando Binance P2P...', '');
+  try {
+    const res = await fetch('https://bo.dolarapi.com/v1/dolares/binance');
+    if (!res.ok) throw new Error('Error ' + res.status);
+    const data = await res.json();
+    const venta = parseFloat(data.venta);
+    if (!venta) throw new Error('Sin datos');
+    document.getElementById('tc-actual').value = venta.toFixed(2);
+    const hora = new Date().toLocaleTimeString('es-BO', {hour:'2-digit', minute:'2-digit'});
+    setStatus('Binance P2P actualizado a las ' + hora, 'ok');
+    calcular();
+  } catch(e) {
+    setStatus('No se pudo obtener el dólar. Ingresalo manualmente.', 'err');
+  }
+}
 
 function calcular() {
   const usdVal = parseFloat(document.getElementById('usd-avaluo').value);
@@ -98,13 +140,15 @@ function calcular() {
   const tcAvaluo = 9.20;
   const tcActual = parseFloat(document.getElementById('tc-actual').value);
 
+  if (!tcActual) return;
+
   const bs = usdVal * tcOficial;
   const pct = (tcActual - tcAvaluo) / tcAvaluo * 100;
   const usdAjustado = usdVal * (1 + pct / 100);
   const bsAjustado = usdAjustado * tcOficial;
-
   const realAvaluo = bs / tcAvaluo;
   const realHoy = bs / tcActual;
+  const diff = realHoy - realAvaluo;
 
   document.getElementById('res-pct').textContent = (pct >= 0 ? '+' : '') + pct.toFixed(3) + '%';
   document.getElementById('res-usd').textContent = '$us ' + fmt(usdAjustado);
@@ -112,9 +156,19 @@ function calcular() {
   document.getElementById('res-real-avaluo').textContent = '$us ' + fmt(realAvaluo);
   document.getElementById('res-real-hoy').textContent = '$us ' + fmt(realHoy);
   document.getElementById('res-real-hoy-tc').textContent = 'a Bs ' + tcActual.toFixed(2);
+
+  const alerta = document.getElementById('alerta-diff');
+  alerta.style.display = 'block';
+  if (diff < 0) {
+    alerta.className = 'alerta baja';
+    alerta.textContent = 'Sin ajuste perdés $us ' + fmt(Math.abs(diff)) + ' vs el avalúo';
+  } else {
+    alerta.className = 'alerta sube';
+    alerta.textContent = 'Sin ajuste ganás $us ' + fmt(diff) + ' vs el avalúo';
+  }
 }
 
-calcular();
+fetchDolar();
 </script>
 
 </body>
