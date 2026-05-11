@@ -90,7 +90,7 @@ mapboxgl.accessToken = TOKEN;
 
 var map = new mapboxgl.Map({
   container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v12',
+  style: 'mapbox://styles/mapbox/outdoors-v12',
   center: [-63.1812, -17.7863],
   zoom: 12
 });
@@ -100,11 +100,19 @@ map.on('load', cargarPropiedades);
 
 function cargarPropiedades() {
   document.getElementById('listaHeader').textContent = 'Leyendo propiedades...';
-  Papa.parse(CSV_URL, {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(res) {
+  var proxy = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL);
+  fetch(proxy)
+    .then(function(r) { return r.text(); })
+    .then(function(csv) {
+      var res = Papa.parse(csv, { header: true, skipEmptyLines: true });
+      procesarPropiedades(res);
+    })
+    .catch(function(e) {
+      document.getElementById('listaHeader').textContent = 'Error: ' + e.message;
+    });
+}
+
+function procesarPropiedades(res) {
       propiedades = res.data
         .filter(function(p) { return p.nombre && p.lat && p.lng; })
         .map(function(p, i) { p._id = i; return p; });
@@ -133,11 +141,7 @@ function cargarPropiedades() {
 
       if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 80, maxZoom: 14 });
       renderLista(propiedades);
-    },
-    error: function(e) {
-      document.getElementById('listaHeader').textContent = 'Error CSV: ' + (e.message || e);
-    }
-  });
+  }
 }
 
 function fmt(precio, tipo) {
