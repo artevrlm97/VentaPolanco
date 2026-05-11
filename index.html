@@ -40,9 +40,9 @@
   .popup-meta { font-size: 12px; color: #777; margin-bottom: 6px; }
   .popup-desc { font-size: 12px; color: #888; line-height: 1.5; }
   .popup-zona { font-size: 11px; color: #2d6a4f; font-weight: 600; margin-top: 6px; }
-  .marker { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .marker.venta { background: #2d6a4f; }
-  .marker.alquiler { background: #1a5fa8; }
+  .marker { display: flex; align-items: center; justify-content: center; background: #fff; border: 2px solid #222; border-radius: 99px; padding: 5px 10px; font-size: 12px; font-weight: 700; color: #222; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2); white-space: nowrap; transition: all 0.15s; }
+
+
   .vacio { padding: 32px; text-align: center; color: #aaa; font-size: 14px; }
   .lista::-webkit-scrollbar { width: 4px; }
   .lista::-webkit-scrollbar-thumb { background: #ddd; border-radius: 99px; }
@@ -90,7 +90,7 @@ mapboxgl.accessToken = TOKEN;
 
 var map = new mapboxgl.Map({
   container: 'map',
-  style: 'mapbox://styles/mapbox/light-v11',
+  style: 'mapbox://styles/mapbox/streets-v12',
   center: [-63.1812, -17.7863],
   zoom: 12
 });
@@ -120,7 +120,11 @@ function cargarPropiedades() {
         if (isNaN(lat) || isNaN(lng)) return;
         var el = document.createElement('div');
         el.className = 'marker ' + (p.tipo === 'alquiler' ? 'alquiler' : 'venta');
-        new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+        var n = parseFloat(p.precio);
+        var label = isNaN(n) ? p.precio : (n >= 1000 ? '$' + Math.round(n/1000) + 'k' : '$' + n.toLocaleString('es-BO'));
+        if (p.tipo === 'alquiler') label += '/mes';
+        el.textContent = label;
+        new mapboxgl.Marker({ element: el, anchor: 'center' })
           .setLngLat([lng, lat]).addTo(map);
         el.addEventListener('click', function() { abrirPopup(p); });
         marcadores.push({ id: p._id, el: el });
