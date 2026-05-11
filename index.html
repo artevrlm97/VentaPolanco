@@ -86,6 +86,10 @@ var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2EiYdNqfHC4uaVT
 
 var propiedades = [], marcadores = [], popupActual = null;
 
+function coord(val) {
+  return parseFloat(val.toString().replace(/[^0-9.\-]/g, ''));
+}
+
 mapboxgl.accessToken = TOKEN;
 
 var map = new mapboxgl.Map({
@@ -124,7 +128,7 @@ function procesarPropiedades(res) {
 
       var bounds = new mapboxgl.LngLatBounds();
       propiedades.forEach(function(p) {
-        var lat = parseFloat(p.lat), lng = parseFloat(p.lng);
+        var lat = coord(p.lat), lng = coord(p.lng);
         if (isNaN(lat) || isNaN(lng)) return;
         var el = document.createElement('div');
         el.className = 'marker ' + (p.tipo === 'alquiler' ? 'alquiler' : 'venta');
@@ -168,7 +172,7 @@ function abrirPopup(p) {
     (p.zona ? '<div class="popup-zona">📍 ' + p.zona + '</div>' : '') +
     '</div>';
   popupActual = new mapboxgl.Popup({ offset: 25, maxWidth: '260px' })
-    .setLngLat([parseFloat(p.lng), parseFloat(p.lat)])
+    .setLngLat([coord(p.lng), coord(p.lat)])
     .setHTML(html).addTo(map);
   document.querySelectorAll('.card').forEach(function(c) { c.classList.remove('activa'); });
   var card = document.getElementById('card-' + p._id);
@@ -178,7 +182,7 @@ function abrirPopup(p) {
 function irAPropiedad(id) {
   var p = propiedades[id];
   if (!p) return;
-  map.flyTo({ center: [parseFloat(p.lng), parseFloat(p.lat)], zoom: 15, speed: 1.2 });
+  map.flyTo({ center: [coord(p.lng), coord(p.lat)], zoom: 15, speed: 1.2 });
   abrirPopup(p);
 }
 
