@@ -85,7 +85,7 @@ var propiedades = [], marcadores = [], popupActual = null;
 function limpiarCoord(v) {
   if (!v) return NaN;
   // elimina cualquier caracter que no sea digito, punto o guion normal
-  var s = v.toString().replace(/[^\d.\-]/g, '');
+  var s = v.toString().replace(/[^0-9.-]/g, '');
   return parseFloat(s);
 }
 
